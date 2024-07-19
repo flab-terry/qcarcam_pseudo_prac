@@ -13,7 +13,7 @@ QCarCamRet_e QCarCamInitialize(const QCarCamInit_t* pInitParams) {
 }
 
 QCarCamRet_e QCarCamQueryInputs(QCarCamInput_t *pInputs, const uint32_t size, uint32_t *pRetSize) {
-    TestInput& testInput = TestInput::getInstance();
+    InputManager& inputManager = InputManager::getInstance();
     QCarCamRet_e ret;
 
     if(pRetSize == NULL) {
@@ -23,7 +23,7 @@ QCarCamRet_e QCarCamQueryInputs(QCarCamInput_t *pInputs, const uint32_t size, ui
         return QCARCAM_RET_OK;
     } else {
         for(uint32_t i = 0; i <= 2; ++i) {
-            ret = testInput.getInput(&pInputs[i], i);
+            ret = inputManager.getInput(&pInputs[i], i);
 
             if (ret != QCARCAM_RET_OK) return ret;
         }
@@ -36,7 +36,7 @@ QCarCamRet_e QCarCamQueryInputs(QCarCamInput_t *pInputs, const uint32_t size, ui
 
 QCarCamRet_e QCarCamQueryInputModes(const uint32_t inputId, QCarCamInputModes_t* pInputModes) {
     try {
-        QCarCamRet_e ret = TestInput::getInstance().getModes(inputId, pInputModes);
+        QCarCamRet_e ret = InputManager::getInstance().getModes(inputId, pInputModes);
         return QCARCAM_RET_OK;
     } catch (...) {
         return QCARCAM_RET_FAILED;

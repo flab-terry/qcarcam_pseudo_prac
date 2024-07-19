@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <thread>
 #include "qcarcam.h"
-#include "test_input.h"
+#include "input_manager.h"
 #include "test_mode.h"
 #include "handle_manager.h"
 #include "stream_manager.h"
