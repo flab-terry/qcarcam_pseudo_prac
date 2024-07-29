@@ -46,7 +46,7 @@ private:
     std::map<int32_t, std::shared_ptr<std::mutex>> mMutexList;
     std::map<int32_t, pthread_t> mThreadList;
 
-    int32_t num;
+    int32_t num = 1;
     QCarCamRet_e ret;
 };
 #endif

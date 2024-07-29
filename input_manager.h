@@ -27,6 +27,7 @@ private:
     const QCarCamInputSrc_t bottomOfLeftCamera = {2, 1920, 1080, QCARCAM_FMT_RGB_888, 60, 0};
     const QCarCamInputSrc_t topOfRightCamera = {3, 1920, 1080, QCARCAM_FMT_RGB_888, 60, 0};
     const QCarCamInputSrc_t bottomOfRightCamera = {4, 1920, 1080, QCARCAM_FMT_RGB_888, 60, 0};
+    const QCarCamInputSrc_t sampleVideo = {5, 1920, 1080, QCARCAM_FMT_RGB_888, 30, 0};
 
     QCarCamMode_t rearViewMode0 = {{rvcCamera}, 1};
     QCarCamMode_t rearViewModes[1] = {rearViewMode0};
@@ -41,12 +42,17 @@ private:
     QCarCamMode_t rightViewMode2 = {{topOfRightCamera, bottomOfRightCamera}, 2};
     QCarCamMode_t rightViewModes[3] = {rightViewMode0, rightViewMode1, rightViewMode2};
 
+    QCarCamMode_t sampleVideoViewMode0 = {{sampleVideo}, 1};
+    QCarCamMode_t sampleVideoViewModes[1] = {sampleVideoViewMode0};
+ 
     QCarCamInputModes_t rvcModes = {0, 1, rearViewModes};
     QCarCamInputModes_t leftModes = {0, 3, leftViewModes};
     QCarCamInputModes_t rightModes = {0, 3, rightViewModes};
+    QCarCamInputModes_t sampleVideoModes = {0, 1, sampleVideoViewModes};
 
     QCarCamInput_t rvcInput = {0, 0, 0, "Rear_View", 1, 0};
     QCarCamInput_t cmsLeftInput = {1, 1, 0, "Left_View", 3, 0};
     QCarCamInput_t cmsRightInput = {2, 1, 1, "Right_View", 3, 0};
+    QCarCamInput_t sampleVideoInput = {3, 2, 0, "Sample_Video", 1, 0};
 };
 #endif

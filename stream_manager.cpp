@@ -98,6 +98,7 @@ QCarCamRet_e StreamManager::resumeStream(QCarCamHndl_t hndl)
 
 QCarCamRet_e StreamManager::startStream(QCarCamHndl_t hndl) {
     int32_t hndlNum = hndl.hndlNum;
+    int streamNum = 1;
     //std::shared_ptr<std::mutex> pMutex = mMutexList[hndlNum];
     Buffer_t streamBuffer;
     while(1) {
@@ -105,11 +106,14 @@ QCarCamRet_e StreamManager::startStream(QCarCamHndl_t hndl) {
             pop(hndlNum, &streamBuffer);
             for(uint32_t i = 0; i < streamBuffer.pBuffers->numPlanes; ++i) {
                 int* memHndl = reinterpret_cast<int*>(streamBuffer.pBuffers->planes[i].memHndl);
-                *memHndl = num;
-                ++num;
+                *memHndl = streamNum;
+                if(streamNum >= 1076) streamNum = 1;
+                ++streamNum;
             }
             push(hndlNum, streamBuffer);
-            //std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(33));
+        } else {
+            std::cout << "Queue is empty" << std::endl;
         }
     }
     return QCARCAM_RET_TIMEOUT;

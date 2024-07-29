@@ -19,16 +19,16 @@ QCarCamRet_e QCarCamQueryInputs(QCarCamInput_t *pInputs, const uint32_t size, ui
     if(pRetSize == NULL) {
         return QCARCAM_RET_BADPARAM;
     } else if(pInputs == NULL && size == 0) {
-        *pRetSize = 3;
+        *pRetSize = 4;
         return QCARCAM_RET_OK;
     } else {
-        for(uint32_t i = 0; i <= 2; ++i) {
+        for(uint32_t i = 0; i < 4; ++i) {
             ret = inputManager.getInput(&pInputs[i], i);
 
             if (ret != QCARCAM_RET_OK) return ret;
         }
         if(pRetSize != NULL) {
-            *pRetSize = 3;
+            *pRetSize = 4;
         }
         return QCARCAM_RET_OK;
     }

@@ -17,6 +17,10 @@ QCarCamRet_e InputManager::getInput(QCarCamInput_t* pInput, uint32_t inputId) {
             *pInput = cmsRightInput;
             return QCARCAM_RET_OK;
 
+            case 3:
+            *pInput = sampleVideoInput;
+            return QCARCAM_RET_OK;
+
             default:
             return QCARCAM_RET_FAILED;
         } 
@@ -36,6 +40,10 @@ QCarCamRet_e InputManager::getModes(uint32_t id, QCarCamInputModes_t* pInputMode
 
         case 2:
         *pInputModes = rightModes;
+        return QCARCAM_RET_OK;
+
+        case 3:
+        *pInputModes = sampleVideoModes;
         return QCARCAM_RET_OK;
 
         default:

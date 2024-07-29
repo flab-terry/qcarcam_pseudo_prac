@@ -1,6 +1,7 @@
 #include <iostream>
 #include <memory>
 #include <thread>
+#include <opencv4/opencv2/opencv.hpp>
 #include "qcarcam.h"
 #include "qcarcam_metadata.h"
 #include "qcarcam_api.h"
@@ -9,22 +10,22 @@
 
 int main() {
     //------------------create camera instance----------------------------
-    Camera rvcCamera;
-    QCarCamRet_e ret = rvcCamera.setApiVersion(10);
+    Camera sampleVideo;
+    QCarCamRet_e ret = sampleVideo.setApiVersion(10);
     if(ret != QCARCAM_RET_OK) {
         std::cout << "setApiVersion fail" << std::endl;
         return -1;
     }
 
     //-------------------------initialize---------------------------------
-    QCarCamInit_t rvcInit;
-    ret = rvcCamera.getCameraInit(rvcInit);
+    QCarCamInit_t videoInit;
+    ret = sampleVideo.getCameraInit(videoInit);
     if(ret != QCARCAM_RET_OK) {
         std::cout << "getCameraInit fail" << std::endl;
         return -1;
     }
 
-    ret = QCarCamInitialize(&rvcInit);
+    ret = QCarCamInitialize(&videoInit);
     if(ret == QCARCAM_RET_OK) {
         std::cout << "QCarCamInitialize success" << std::endl;
     } else {
@@ -54,8 +55,8 @@ int main() {
     }
 
     //-----------------------query input modes------------------------------
-    uint32_t rvcId;
-    ret = rvcCamera.setInput(pInput[0], &rvcId);
+    uint32_t videoId;
+    ret = sampleVideo.setInput(pInput[3], &videoId);
 
     if(ret != QCARCAM_RET_OK) {
         std::cout << "get camera ID fail" << std::endl;
@@ -64,13 +65,13 @@ int main() {
 
     QCarCamInputModes_t queryInputModes = {};
 
-    ret = QCarCamQueryInputModes(rvcId, &queryInputModes);
+    ret = QCarCamQueryInputModes(videoId, &queryInputModes);
     if(ret != QCARCAM_RET_OK) {
         std::cout << "QCarCamQueryInputMode fail" << std::endl;
         return -1;
     }
 
-    rvcCamera.setQueryInputModes(queryInputModes);
+    sampleVideo.setQueryInputModes(queryInputModes);
     if(ret == QCARCAM_RET_OK) {
         std::cout << "QCarCamQueryInputMode success" << std::endl;
     } else {
@@ -83,11 +84,11 @@ int main() {
 
     openParams.opMode = QCARCAM_OPMODE_RAW_DUMP;
     openParams.numInputs = 1;
-    openParams.inputs[0].inputId = rvcId;
+    openParams.inputs[0].inputId = videoId;
     openParams.inputs[0].srcId = 0;
     openParams.inputs[0].inputMode = 0;
 
-    ret = rvcCamera.setOpenParam(openParams);
+    ret = sampleVideo.setOpenParam(openParams);
     if(ret != QCARCAM_RET_OK) {
         std::cout << "QCarCamOpen fail 1" << std::endl;
         return -1;
@@ -100,7 +101,7 @@ int main() {
         std::cout << "QCarCamOpen fail 3" << std::endl;
         return -1;
     }
-    ret = rvcCamera.setOpenHandle(hndl);
+    ret = sampleVideo.setOpenHandle(hndl);
     if(ret == QCARCAM_RET_OK) {
         std::cout << "QCarCamOpen success" << std::endl;
     } else {
@@ -109,7 +110,7 @@ int main() {
     }
 
     //---------------------------qcarcam set buffers-------------------------------
-    ret = rvcCamera.getHandle(&hndl);
+    ret = sampleVideo.getHandle(&hndl);
 
     std::shared_ptr<QCarCamBufferList_t> bufferList{};
 
@@ -138,71 +139,89 @@ int main() {
 
     //------------------------------qcarcam get frame--------------------------------
     QCarCamFrameInfo_t frameInfo;
+    uint64_t memHndl;
+    int time = 0;
+    cv::Mat img;
     
-    for(uint32_t i = 0; i < 100; ++i) {
+    while(1) {
         ret = QCarCamGetFrame(hndl, &frameInfo, 100, 0);
 
         if(ret != QCARCAM_RET_OK) {
             std::cout << "QCarCamGetFrame failed" << std::endl;
         } else {
-            std::cout << "G Frame id : " << bufferManager.getDescription(frameInfo, 0) << std::endl;
+            bufferManager.getMemHndl(frameInfo.id, frameInfo.bufferIndex, 0, &memHndl);
+            std::cout << time << " G Frame id : " << bufferManager.getDescription(frameInfo, 0) << std::endl;
+            std::string file = "./sample_snapshot/snapshot_" + std::to_string(*reinterpret_cast<int*>(memHndl)) + ".bmp";
+
+            img = cv::imread(file);
+
+            if(img.empty()) {
+                std::cerr << "Image load failed" << std::endl;
+                return -1;
+            }
+
+            cv::namedWindow("image");
+            cv::imshow("image", img);
+            
+            int key = cv::waitKey(16);
+            std::this_thread::sleep_for(std::chrono::milliseconds(40));
+            if(key == 'q') {
+                cv::destroyAllWindows();
+                return 0;
+            }
+
+            ++time;
         }
 
-
-        if(ret != QCARCAM_RET_OK) {
-            std::cout << "QCarCamReleaseFrame failed" << std::endl;
-        } else {
-            std::cout << "R Frame id : " << bufferManager.getDescription(frameInfo, 0) << std::endl;
-        }
         ret = QCarCamReleaseFrame(hndl, frameInfo.id, frameInfo.bufferIndex);
     }
 
-    //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
-    //---------------------------qcarcam pause streaming-------------------------------
-    ret = QCarCamPause(hndl);
-    if(ret != QCARCAM_RET_OK) {
-        std::cout << "QCarCamPause failed" << std::endl;
-    } else {
-        std::cout << "QCarCamPause success" << std::endl;
-    }
+    // //---------------------------qcarcam pause streaming-------------------------------
+    // ret = QCarCamPause(hndl);
+    // if(ret != QCARCAM_RET_OK) {
+    //     std::cout << "QCarCamPause failed" << std::endl;
+    // } else {
+    //     std::cout << "QCarCamPause success" << std::endl;
+    // }
 
-    //---------------------------qcarcam resume streaming-------------------------------
-    ret = QCarCamResume(hndl);
-    if(ret != QCARCAM_RET_OK) {
-        std::cout << "QCarCamResume failed" << std::endl;
-    } else {
-        std::cout << "QCarCamResume success" << std::endl;
-    }
+    // //---------------------------qcarcam resume streaming-------------------------------
+    // ret = QCarCamResume(hndl);
+    // if(ret != QCARCAM_RET_OK) {
+    //     std::cout << "QCarCamResume failed" << std::endl;
+    // } else {
+    //     std::cout << "QCarCamResume success" << std::endl;
+    // }
 
-    //---------------------------qcarcam get frame-----------------------------------
-    for(uint32_t i = 0; i < 100; ++i) {
-        ret = QCarCamGetFrame(hndl, &frameInfo, 100, 0);
+    // //---------------------------qcarcam get frame-----------------------------------
+    // for(uint32_t i = 0; i < 100; ++i) {
+    //     ret = QCarCamGetFrame(hndl, &frameInfo, 100, 0);
 
-        if(ret != QCARCAM_RET_OK) {
-            std::cout << "QCarCamGetFrame failed" << std::endl;
-        } else {
-            std::cout << "G Frame id : " << bufferManager.getDescription(frameInfo, 0) << std::endl;
-        }
+    //     if(ret != QCARCAM_RET_OK) {
+    //         std::cout << "QCarCamGetFrame failed" << std::endl;
+    //     } else {
+    //         std::cout << "G Frame id : " << bufferManager.getDescription(frameInfo, 0) << std::endl;
+    //     }
 
 
-        if(ret != QCARCAM_RET_OK) {
-            std::cout << "QCarCamReleaseFrame failed" << std::endl;
-        } else {
-            std::cout << "R Frame id : " << bufferManager.getDescription(frameInfo, 0) << std::endl;
-        }
-        ret = QCarCamReleaseFrame(hndl, frameInfo.id, frameInfo.bufferIndex);
-    }
+    //     if(ret != QCARCAM_RET_OK) {
+    //         std::cout << "QCarCamReleaseFrame failed" << std::endl;
+    //     } else {
+    //         std::cout << "R Frame id : " << bufferManager.getDescription(frameInfo, 0) << std::endl;
+    //     }
+    //     ret = QCarCamReleaseFrame(hndl, frameInfo.id, frameInfo.bufferIndex);
+    // }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    // std::this_thread::sleep_for(std::chrono::milliseconds(100));
     
-    //---------------------------qcarcam stop streaming---------------------------------
-    ret = QCarCamStop(hndl);
-    if(ret != QCARCAM_RET_OK) {
-        std::cout << "QCarCamStop failed" << std::endl;
-    } else {
-        std::cout << "QCarCamStop success" << std::endl;
-    }
+    // //---------------------------qcarcam stop streaming---------------------------------
+    // ret = QCarCamStop(hndl);
+    // if(ret != QCARCAM_RET_OK) {
+    //     std::cout << "QCarCamStop failed" << std::endl;
+    // } else {
+    //     std::cout << "QCarCamStop success" << std::endl;
+    // }
 
     //-----------------------------end test----------------------------------------------
     std::cout << "End QCarCam API test" << std::endl;
